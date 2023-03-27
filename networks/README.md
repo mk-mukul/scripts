@@ -1,6 +1,2 @@
-ifconfig | grep broadcast | cut -d " " -f 10 | cut -d "." -f 1,2,3
-10.0.5
-
-ping -c 1 10.0.5.171 | grep "64 bytes" | cut -d " " -f 4 | tr -d ":"
-10.0.5.171
-
+./expect.exp    username   password    ip              path                            file        result
+./expect.exp    mukul      ******      10.7.58.212     ../10.7.58.0-24/192.168.122.1   IPs.txt     result.txt

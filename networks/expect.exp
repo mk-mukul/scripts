@@ -1,0 +1,44 @@
+#!/usr/bin/expect -f 
+
+
+set DATE [exec date +%F]
+set username    [lindex $argv 0] 
+set password    [lindex $argv 1]
+set ip          [lindex $argv 2]
+set path        [lindex $argv 3]
+set file        [lindex $argv 4]
+set result      "expect.txt"
+#dont timeout, let the program run its course
+# set timeout -1
+
+# send the target ips to the server 
+spawn scp "$path/$file" $username@$ip:/tmp
+expect {
+    "continue connecting" {send "yes\r"}
+    exp_continue
+}
+expect "password: " {send "$password\r"}
+
+# ssh log in to the server
+spawn ssh $username@$ip
+expect "password: " {send "$password\r"}
+
+# go to the specific directory
+expect "$ " {send -- "cd /tmp\r"}
+sleep 1
+
+# start the nmap command on the target ips
+expect "$ " {send -- "nmap -iL /tmp/$file -F -oG - | grep 'open' > /tmp/$result\r"}
+sleep 1
+
+expect "$ " {send -- "exit\r"}
+sleep 1
+
+# geting bact the results file generated on the server
+spawn scp "$username@$ip:/tmp/$result" "$path/$result"
+sleep 1
+
+expect "password: " {send "$password\r"}
+sleep 1
+
+interact
