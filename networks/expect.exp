@@ -1,9 +1,9 @@
 #!/usr/bin/expect -f 
 
 # username, password and ip of remote server
-set username    [lindex $argv 0] 
-set password    [lindex $argv 1]
-set server      [lindex $argv 2]
+set server      [lindex $argv 0]
+set username    [lindex $argv 1] 
+set password    [lindex $argv 2]
 
 # path of folder in which scan file is stored
 set path        [lindex $argv 3]
@@ -20,9 +20,11 @@ expect "$ " {send -- "cd '$path'\r"}
 expect "$ " {send -- "scp '$server/$targets' '$username@$server:/tmp/'\r"}
 expect {
     "continue connecting" {send "yes\r"}
+    "$ " {send "echo server is not live\r"; interact}
     exp_continue
 }
 expect "password: " {send "$password\r"}
+expect "password: " {send "\x03"; interact}
 
 # ssh log in to the server
 expect "$ " {send "ssh $username@$server\r"}
@@ -55,7 +57,9 @@ expect "$ " {send "exit\r"}
 
 # appaend the results in the main file
 expect "$ " {send -- "cat $server/$results >> $results\r"}
-expect "$ " {send -- "echo 'Scan completed by the server = $server'\r"}
+expect "$ " {send -- "echo '**************************************'\r"}
+expect "$ " {send -- "echo 'Scan completed by the server: $server'\r"}
+expect "$ " {send -- "echo '**************************************'\r"}
 sleep 1
 
 interact
