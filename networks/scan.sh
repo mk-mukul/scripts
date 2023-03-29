@@ -14,8 +14,7 @@ echo "starting ping scan... "
 over_write="y"
 [ -e "$folder/$live_ips" ] && echo -n "$live_ips file already present in $folder. Do you want to over write it?(y/n): " && read over_write
 [ "$over_write" != "y" ] && exit
-echo "starting : fping -g $ip_range -a -s"
-fping -g $ip_range -a -s > $folder/$live_ips
+echo "starting : fping -g $ip_range -a -s" && fping -g $ip_range -a -s > $folder/$live_ips
 echo "Total IPs:$(wc -l $folder/$live_ips)"
 # ************* ping scan complete ****************
 
@@ -33,10 +32,18 @@ echo "Scanning complete"
 
 echo "Find file in the folder = $folder"
 
+touch $folder/$open_ports
+
 
 ip="192.168.122.1"
-[ -e "$folder/$ip" ] || mkdir "$folder/$ip"
-cp "$folder/$live_ips" "$folder/$ip/ips.txt"
-echo "run expect scripts on found ips"
-./expect.exp "mukul" "kya kar rahe ho bobo" "$ip" "$folder/$ip" "ips.txt"   
+username="mukul"
+password="kya kar rahe ho bobo"
+output="$open_ports"
 
+# make the folder for the server and assign the targer ips
+[ -e "$folder/$ip" ] || mkdir "$folder/$ip"
+cp "$folder/$live_ips" "$folder/$ip/$live_ips"
+# start new terminal for ssh login and do the scanning from the remore server
+echo "run expect scripts on found ips"
+xterm -e ./expect.exp "$username" "$password" "$ip" "$folder" "$live_ips" "$output" &
+echo "command complete"

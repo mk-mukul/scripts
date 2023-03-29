@@ -1,18 +1,23 @@
 #!/usr/bin/expect -f 
 
-
-set DATE [exec date +%F]
+# username, password and ip of remote server
 set username    [lindex $argv 0] 
 set password    [lindex $argv 1]
-set ip          [lindex $argv 2]
+set server      [lindex $argv 2]
+
+# path of folder in which scan file is stored
 set path        [lindex $argv 3]
-set file        [lindex $argv 4]
-set result      "expect.txt"
-#dont timeout, let the program run its course
-# set timeout -1
+
+# name of file in which ips are sroted
+set targets     [lindex $argv 4]
+
+# name of file in which scan results will stored
+set results     [lindex $argv 5]
 
 # send the target ips to the server 
-spawn scp "$path/$file" $username@$ip:/tmp
+spawn bash
+expect "$ " {send -- "cd '$path'\r"}
+expect "$ " {send -- "scp '$server/$targets' '$username@$server:/tmp/'\r"}
 expect {
     "continue connecting" {send "yes\r"}
     exp_continue
@@ -20,25 +25,37 @@ expect {
 expect "password: " {send "$password\r"}
 
 # ssh log in to the server
-spawn ssh $username@$ip
+expect "$ " {send "ssh $username@$server\r"}
 expect "password: " {send "$password\r"}
 
 # go to the specific directory
 expect "$ " {send -- "cd /tmp\r"}
 sleep 1
 
+set timeout -1
 # start the nmap command on the target ips
-expect "$ " {send -- "nmap -iL /tmp/$file -F -oG - | grep 'open' > /tmp/$result\r"}
+expect "$ " {send -- "nmap -iL /tmp/$targets -F -oG - | grep 'open' > /tmp/$results\r"}
 sleep 1
 
 expect "$ " {send -- "exit\r"}
 sleep 1
 
-# geting bact the results file generated on the server
-spawn scp "$username@$ip:/tmp/$result" "$path/$result"
+# geting bacc the results file generated on the server
+expect "$ " {send -- "scp '$username@$server:/tmp/$results' '$server/'\r"}
+sleep 1
+expect "password: " {send "$password\r"}
 sleep 1
 
+# ssh log in to the server to delete file
+expect "$ " {send "ssh $username@$server\r"}
 expect "password: " {send "$password\r"}
+expect "$ " {send "rm /tmp/$results\r"}
+expect "$ " {send "rm /tmp/$targets\r"}
+expect "$ " {send "exit\r"}
+
+# appaend the results in the main file
+expect "$ " {send -- "cat $server/$results >> $results\r"}
+expect "$ " {send -- "echo 'Scan completed by the server = $server'\r"}
 sleep 1
 
 interact
